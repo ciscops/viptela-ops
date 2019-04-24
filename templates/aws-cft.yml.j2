@@ -1,0 +1,60 @@
+{% set aws_env = env | regex_replace('[^A-z0-9]', '') %}
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+{#                                                                            #}
+{# Instances                                                                  #}
+{#                                                                            #}
+{% for name, values in instances.items() %}
+  {{ name }}:
+    Type: AWS::EC2::Instance
+    Properties:
+      DisableApiTermination: 'false'
+      InstanceInitiatedShutdownBehavior: stop
+      ImageId: {{ ami_lookup[values.ami_type] }}
+      InstanceType: {{ values.size }}
+      KeyName: {{ key_name }}
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            {{ lookup('file', values.user_data) | indent(12) }}
+      NetworkInterfaces:
+{% for number in [0, 1] %}
+        - NetworkInterfaceId: !Ref '{{ name }}Eth{{ number }}'
+          DeviceIndex: '{{ number }}'
+{% endfor %}
+      Monitoring: 'false'
+      Tags:
+      - Key: Name
+        Value: {{ aws_env }} {{ name }}
+      - Key: aws_environment
+        Value: {{ aws_env }}
+      - Key: viptela_personality
+        Value: {{ name }}
+{% for number in [0, 1] %}
+  {{ name }}Eth{{ number }}:
+    Type: AWS::EC2::NetworkInterface
+    Properties:
+      Description: {{ aws_env }} {{ name }} eth{{ number }}
+      SubnetId: '{{ subnet_id }}'
+  {{ name }}Eth{{ number }}EIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  {{ name }}Eth{{ number }}EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      NetworkInterfaceId:
+        Ref: '{{ name }}Eth{{ number }}'
+      AllocationId: !GetAtt [{{ name }}Eth{{ number }}EIP, AllocationId]
+    DependsOn: ['{{ name }}', '{{ name }}Eth{{ number }}']
+{% endfor %}
+{% endfor %}
+Outputs:
+{% for name, values in instances.items() %}
+{% for number in [0, 1] %}
+  {{ name }}Eth{{ number }}Ip:
+    Value: !GetAtt ['{{ name }}Eth{{ number }}', PrimaryPrivateIpAddress]
+  {{ name }}Eth{{ number }}EIP:
+    Value: !Ref '{{ name }}Eth{{ number }}EIP'
+{% endfor %}
+{% endfor %}

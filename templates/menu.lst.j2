@@ -1,0 +1,9 @@
+default=0
+fallback=1
+timeout=0
+serial --unit=0 --speed=9600
+terminal --dumb --timeout=5 serial console
+
+title {{ version }}
+root (hd0,0)
+kernel /{{ version }}/vmlinuz root=/dev/nvme1n1 LABEL={{ version }} console=tty1 console=ttyS0

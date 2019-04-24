@@ -1,0 +1,8 @@
+default=0
+fallback=1
+timeout=0
+hiddenmenu
+ 
+title {{ version }}
+root (hd0,1)
+kernel /{{ version }}/vmlinuz root={{ volume_device }} LABEL={{ version }}

@@ -1,0 +1,11 @@
+ALLOWOPTIONS 1
+DEFAULT {{ version }}
+FACTORY {{ version }}
+TIMEOUT 10
+PROMPT 0
+ui vesamenu.c32
+menu title Select kernel options and boot kernel
+menu tabmsg Press [Tab] to edit, [Return] to select
+LABEL {{ version }}
+KERNEL {{ version }}/vmlinuz
+APPEND LABEL={{ version }} crashkernel=128M@64M memmap=4K$193M console=ttyS0
